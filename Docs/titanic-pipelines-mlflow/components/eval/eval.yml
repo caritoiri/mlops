@@ -1,0 +1,25 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: eval_heart_model
+display_name: Evaluate Heart Model
+type: command
+
+inputs:
+  predictions:
+    type: uri_file
+
+outputs:
+  metrics:
+    type: uri_file
+  plots:
+    type: uri_folder
+
+code: .
+
+environment:
+  image: mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04:latest
+  conda_file: conda.yml
+
+command: >-
+  python eval.py
+  --predictions ${{inputs.predictions}}
+  --metrics_out ${{outputs.metrics}}

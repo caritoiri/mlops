@@ -1,0 +1,30 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: train_heart_model
+display_name: Train Heart Model
+type: command
+
+inputs:
+  raw_data:
+    type: uri_file
+  register_name:
+    type: string
+    optional: true
+
+outputs:
+  model_dir:
+    type: uri_folder
+  test_data:
+    type: uri_file
+
+code: .
+
+environment:
+  image: mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04:latest
+  conda_file: conda.yml
+
+command: >-
+  python train.py
+  --data ${{inputs.raw_data}}
+  --model_dir ${{outputs.model_dir}}
+  --test_out ${{outputs.test_data}}
+  $[[--register_name ${{inputs.register_name}}]]

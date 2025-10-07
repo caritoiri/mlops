@@ -1,0 +1,21 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: score
+display_name: Score Test Data
+type: command
+inputs:
+  model_dir:
+    type: uri_folder
+  test:
+    type: uri_file
+outputs:
+  predictions:
+    type: uri_file
+code: .
+environment:
+  image: mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04:latest
+  conda_file: ../../envs/conda.yml
+command: >-
+  python score.py
+  --model_dir ${{inputs.model_dir}}
+  --test ${{inputs.test}}
+  --out ${{outputs.predictions}}

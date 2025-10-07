@@ -1,0 +1,17 @@
+name: bank-mlops
+channels: [conda-forge, defaults]
+dependencies:
+  - python=3.10
+  - pip
+  - pandas
+  - numpy
+  - scikit-learn
+  - mlflow
+  - matplotlib
+  - pyarrow
+  - pip:
+      - azure-identity
+      - azure-ai-ml
+      - azureml-mlflow
+      - azure-ai-textanalytics   # Cognitive Services (Text Analytics)
+
