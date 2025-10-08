@@ -1,0 +1,18 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: eval
+display_name: Evaluación del Modelo Final
+type: command
+inputs:
+  scored_data:
+    type: uri_file
+outputs:
+  eval_output:
+    type: uri_folder
+code: .
+environment:
+  image: mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04:latest
+  conda_file: ../../envs/conda.yml
+command: >
+  python eval.py
+  --scored_data ${{inputs.scored_data}}
+  --eval_output ${{outputs.eval_output}}
