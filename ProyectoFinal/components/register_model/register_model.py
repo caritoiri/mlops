@@ -37,7 +37,8 @@ def main():
     print("✅ Modelo registrado correctamente.")
     print(f"   • Nombre: {registered_model.name}")
     print(f"   • Versión: {registered_model.version}")
-    print(f"   • Path: {registered_model.serialize()['modelPath']}")
+    print(f"   • ID: {registered_model.id}")
+    print(f"   • Storage: {registered_model.storage_location}")
 
 if __name__ == "__main__":
     main()
