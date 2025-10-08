@@ -1,6 +1,5 @@
 import argparse
 import pandas as pd
-import mlflow
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -10,6 +9,7 @@ from sklearn.metrics import (
     classification_report,
 )
 import json
+import os
 
 
 def main():
@@ -29,7 +29,7 @@ def main():
     y_true = df["True_Label"]
     y_pred = df["Predicted_Label"]
 
-    # Calcular métricas
+    # Calcular métricas principales
     acc = accuracy_score(y_true, y_pred)
     precision = precision_score(y_true, y_pred, average="weighted", zero_division=0)
     recall = recall_score(y_true, y_pred, average="weighted", zero_division=0)
@@ -37,24 +37,26 @@ def main():
     cm = confusion_matrix(y_true, y_pred)
     report = classification_report(y_true, y_pred, output_dict=True)
 
-    # Iniciar MLflow
-    mlflow.start_run()
+    # Crear carpeta de salida si no existe
+    os.makedirs(args.eval_output, exist_ok=True)
 
-    # Registrar métricas
-    mlflow.log_metric("accuracy_test", acc)
-    mlflow.log_metric("precision_test", precision)
-    mlflow.log_metric("recall_test", recall)
-    mlflow.log_metric("f1_test", f1)
+    # Guardar métricas en JSON
+    metrics = {
+        "accuracy": acc,
+        "precision": precision,
+        "recall": recall,
+        "f1_score": f1,
+        "confusion_matrix": cm.tolist(),
+    }
 
-    # Registrar matriz de confusión
-    mlflow.log_text(str(cm), "confusion_matrix.txt")
+    metrics_path = os.path.join(args.eval_output, "metrics_summary.json")
+    with open(metrics_path, "w") as f:
+        json.dump(metrics, f, indent=4)
 
-    # Guardar reporte en JSON
-    report_path = f"{args.eval_output}/metrics_report.json"
+    # Guardar reporte detallado
+    report_path = os.path.join(args.eval_output, "classification_report.json")
     with open(report_path, "w") as f:
         json.dump(report, f, indent=4)
-
-    mlflow.end_run()
 
     print("✅ Evaluación completada.")
     print(f"🔹 Accuracy: {acc:.3f}")

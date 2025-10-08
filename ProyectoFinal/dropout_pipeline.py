@@ -1,23 +1,25 @@
-from azure.ai.ml import MLClient, dsl, Input, Output
-from azure.ai.ml.entities import PipelineJob
+from azure.ai.ml import MLClient, dsl, Input, Output, load_component
+from azure.ai.ml.entities import PipelineJob, Model
 from azure.identity import DefaultAzureCredential
+import os
 
 # Inicializar conexión al Workspace de Azure ML
 ml_client = MLClient(
     DefaultAzureCredential(),
-    subscription_id="YOUR_SUBSCRIPTION_ID",
-    resource_group_name="YOUR_RESOURCE_GROUP",
-    workspace_name="YOUR_WORKSPACE_NAME",
+    subscription_id=os.getenv("AZ_SUBSCRIPTION_ID"),
+    resource_group_name=os.getenv("AZ_RG_NAME"),
+    workspace_name=os.getenv("AZ_WS_NAME"),
 )
 
-# Referencias a los componentes (ya registrados o en el repositorio local)
-select_cols_comp = ml_client.components.get("select_cols")
-impute_comp = ml_client.components.get("impute")
-encode_comp = ml_client.components.get("encode")
-split_comp = ml_client.components.get("split")
-train_comp = ml_client.components.get("train_lr")
-score_comp = ml_client.components.get("score")
-eval_comp = ml_client.components.get("eval")
+select_cols_comp = load_component(source="components/select_cols/select_cols.yml")
+impute_comp = load_component(source="components/impute/impute.yml")
+encode_comp = load_component(source="components/encode/encode.yml")
+split_comp = load_component(source="components/split/split.yml")
+train_comp = load_component(source="components/train_lr/train_lr.yml")
+score_comp = load_component(source="components/score/score.yml")
+eval_comp = load_component(source="components/eval/eval.yml")
+register_model_comp = load_component(source="components/register_model/register_model.yml")
+
 
 
 @dsl.pipeline(
@@ -26,33 +28,26 @@ eval_comp = ml_client.components.get("eval")
 )
 def dropout_pipeline(raw_data: Input):
 
-    # 1️⃣ Selección de variables relevantes
     select_step = select_cols_comp(data=raw_data)
-
-    # 2️⃣ Imputación de valores faltantes
     impute_step = impute_comp(data=select_step.outputs.out)
-
-    # 3️⃣ Codificación categórica
     encode_step = encode_comp(data=impute_step.outputs.out)
-
-    # 4️⃣ División train/test
     split_step = split_comp(data=encode_step.outputs.out)
-
-    # 5️⃣ Entrenamiento del modelo
     train_step = train_comp(train=split_step.outputs.train)
-
-    # 6️⃣ Generación de predicciones
     score_step = score_comp(
         model_input=train_step.outputs.model_output, test_data=split_step.outputs.test
     )
-
-    # 7️⃣ Evaluación de métricas finales
     eval_step = eval_comp(scored_data=score_step.outputs.scored_output)
-
-    # Salida final del pipeline
+    register_step = register_model_comp(
+        model_input=train_step.outputs.model_output,
+        eval_metrics=eval_step.outputs.eval_output,
+        AZ_SUBSCRIPTION_ID=os.getenv("AZ_SUBSCRIPTION_ID"),
+        AZ_RG_NAME=os.getenv("AZ_RG_NAME"),
+        AZ_WS_NAME=os.getenv("AZ_WS_NAME")
+    )
     return {
         "trained_model": train_step.outputs.model_output,
         "evaluation_report": eval_step.outputs.eval_output,
+        "model_registration": register_step.outputs.register_ok,
     }
 
 

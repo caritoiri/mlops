@@ -1,0 +1,32 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: register_model
+display_name: Registro Automático del Modelo Entrenado
+type: command
+inputs:
+  model_input:
+    type: uri_folder
+  eval_metrics:
+    type: uri_folder
+    optional: true
+  AZ_SUBSCRIPTION_ID:
+    type: string
+  AZ_RG_NAME:
+    type: string
+  AZ_WS_NAME:
+    type: string
+outputs:
+  register_ok:           # 👈 Nuevo output simbólico
+    type: uri_folder
+code: .
+environment:
+  image: mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04:latest
+  conda_file: ../../envs/conda.yml
+command: >
+  export AZ_SUBSCRIPTION_ID=${{inputs.AZ_SUBSCRIPTION_ID}} &&
+  export AZ_RG_NAME=${{inputs.AZ_RG_NAME}} &&
+  export AZ_WS_NAME=${{inputs.AZ_WS_NAME}} &&
+  pip install marshmallow==3.19.0 &&
+  python register_model.py
+  --model_input ${{inputs.model_input}}
+  $[[--eval_metrics ${{inputs.eval_metrics}}]]
+  > ${{outputs.register_ok}}/registro_log.txt

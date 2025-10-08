@@ -1,17 +1,10 @@
 import argparse
 import pandas as pd
-import mlflow
-import mlflow.sklearn
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import (
-    accuracy_score,
-    f1_score,
-    precision_score,
-    recall_score,
-    confusion_matrix,
-)
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
 import joblib
-
+import json
+import os
 
 def main():
     parser = argparse.ArgumentParser()
@@ -21,53 +14,39 @@ def main():
 
     # Cargar datos de entrenamiento
     df = pd.read_csv(args.train)
-
-    # Separar X y y
     X = df.drop(columns=["Target"])
     y = df["Target"]
 
-    # Inicializar MLflow
-    mlflow.start_run()
-
-    # Definir modelo multiclase
-    model = LogisticRegression(max_iter=200, multi_class="multinomial", solver="lbfgs")
-
     # Entrenar modelo
+    model = LogisticRegression(max_iter=200, multi_class='multinomial', solver='lbfgs')
     model.fit(X, y)
 
-    # Predicciones sobre train
+    # Predicciones
     y_pred = model.predict(X)
 
-    # Calcular métricas básicas
+    # Calcular métricas
     acc = accuracy_score(y, y_pred)
     f1 = f1_score(y, y_pred, average="weighted")
     precision = precision_score(y, y_pred, average="weighted")
     recall = recall_score(y, y_pred, average="weighted")
     cm = confusion_matrix(y, y_pred)
 
-    # Registrar métricas en MLflow
-    mlflow.log_metric("accuracy", acc)
-    mlflow.log_metric("f1_score", f1)
-    mlflow.log_metric("precision", precision)
-    mlflow.log_metric("recall", recall)
-    mlflow.log_param("algorithm", "LogisticRegression")
+    # Guardar métricas como JSON
+    metrics = {
+        "accuracy": acc,
+        "f1_score": f1,
+        "precision": precision,
+        "recall": recall
+    }
+    os.makedirs(args.model_output, exist_ok=True)
+    with open(os.path.join(args.model_output, "metrics.json"), "w") as f:
+        json.dump(metrics, f, indent=4)
 
-    # Guardar matriz de confusión como archivo de texto
-    with open("confusion_matrix.txt", "w") as f:
-        f.write(str(cm))
+    # Guardar modelo
+    joblib.dump(model, os.path.join(args.model_output, "model.pkl"))
 
-    # Registrar modelo en MLflow
-    mlflow.sklearn.log_model(model, "model")
-
-    # Guardar modelo localmente para el siguiente paso del pipeline
-    joblib.dump(model, f"{args.model_output}/model.pkl")
-
-    mlflow.end_run()
-
-    print("✅ Entrenamiento completado con éxito.")
-    print(f"🔹 Accuracy: {acc:.3f}")
-    print(f"🔹 F1 Score: {f1:.3f}")
-
+    print("✅ Modelo entrenado correctamente.")
+    print("🔹 Métricas:", metrics)
 
 if __name__ == "__main__":
     main()
