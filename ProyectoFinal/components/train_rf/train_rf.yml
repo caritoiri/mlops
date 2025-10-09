@@ -1,0 +1,25 @@
+# ===============================
+# train_rf_multiclass.yml
+# ===============================
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: train_rf_multiclass
+display_name: Entrenamiento del Modelo (Random Forest Multiclase)
+type: command
+
+inputs:
+  train:
+    type: uri_file
+
+outputs:
+  model_output:
+    type: uri_folder
+
+code: .
+environment:
+  image: mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04:latest
+  conda_file: ../../envs/conda.yml
+
+command: >
+  python train_rf.py
+  --train ${{inputs.train}}
+  --model_output ${{outputs.model_output}}

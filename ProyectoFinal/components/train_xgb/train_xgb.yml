@@ -1,0 +1,18 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: train_xgb_multiclass
+display_name: Entrenamiento del Modelo (XGBoost Multiclase)
+type: command
+inputs:
+  train:
+    type: uri_file
+outputs:
+  model_output:
+    type: uri_folder
+code: .
+environment:
+  image: mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04:latest
+  conda_file: ../../envs/conda.yml
+command: >
+  python train_xgb_v2.py
+  --train ${{inputs.train}}
+  --model_output ${{outputs.model_output}}
